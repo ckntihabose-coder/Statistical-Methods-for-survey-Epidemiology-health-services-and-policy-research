@@ -1,0 +1,45 @@
+---
+title: "Statistical Methods for Survey, Epidemiology, Health Services and Policy Research"
+author: "Corneille Killy Ntihabose"
+date: "`r Sys.Date()`"
+output: pdf_document
+documentclass: book
+bibliography:
+- book.bib
+- packages.bib
+description: "This is a book on statistical and epidemiological methods applied to
+  \nsurvey analysis, health services research, and policy evaluation.\n"
+link-citations: true
+github-repo: "ckntihabose-coder/Statistical-Methods-for-survey-Epidemiology-health-services-and-policy-research"
+site: bookdown::bookdown_site
+---
+
+# About this book
+
+This book is under development. It will eventually cover:
+
+-   Survey methods for complex data (e.g., NHANES, DHS)
+-   Regression models in epidemiology
+-   Interrupted time series for policy evaluation
+-   Health services and policy applications (drones, oxygen systems, etc.)
+
+```{r, eval=FALSE}
+bookdown::render_book()
+```
+
+To render this example to PDF as a `bookdown::pdf_book`, you'll need to install XeLaTeX. You are recommended to install TinyTeX (which includes XeLaTeX): <https://yihui.org/tinytex/>.
+
+## Preview book
+
+As you work, you may start a local server to live preview this HTML book. This preview will update as you edit the book when you save individual .Rmd files. You can start the server in a work session by using the RStudio add-in "Preview book", or from the R console:
+
+```{r eval=FALSE}
+bookdown::serve_book()
+```
+
+```{r include=FALSE}
+# automatically create a bib database for R packages
+knitr::write_bib(c(
+  .packages(), 'bookdown', 'knitr', 'rmarkdown'
+), 'packages.bib')
+```

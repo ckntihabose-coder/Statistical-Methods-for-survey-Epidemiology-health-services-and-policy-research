@@ -1,0 +1,6 @@
+bookdown::gitbook:
+  config:
+    toc:
+      collapse: section
+    edit: https://github.com/ckntihabose-coder/Statistical-Methods-for-survey-Epidemiology-health-services-and-policy-research/edit/main/%s
+    download: ["pdf", "epub"]

@@ -1,0 +1,14 @@
+book_filename: "Statistical-Methods"
+output_dir: "docs"
+
+rmd_files:
+  - "index.Rmd"
+  - "01-intro.Rmd"
+  - "02-survey-methods.Rmd"
+  - "03-epidemiology-methods.Rmd"
+  - "04-health-services.Rmd"
+  - "05-ITS-analysis.Rmd"
+  - "06-NHANES-survival.Rmd"
+  - "07-DHS-stunting.Rmd"
+  - "08-missing-data.Rmd"
+  - "09-appendix.Rmd"
