@@ -1,4 +1,5 @@
-# Introduction 
+# Introduction to the book
+
 
 This book presents practical statistical methods for analyzing survey data and evaluating health policies, with a focus on applications in epidemiology and health services research. The motivating examples are drawn from three main data sources:
 

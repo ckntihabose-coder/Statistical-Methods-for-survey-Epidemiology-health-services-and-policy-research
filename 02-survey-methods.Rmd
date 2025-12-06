@@ -1,4 +1,4 @@
-# Survey Methods 
+# Survey Methods
 
 
 This chapter introduces statistical methods for the analysis of complex survey data. We focus on two widely used data sources in global and population health:

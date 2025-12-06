@@ -33,7 +33,7 @@ survey analysis, health services research, and policy evaluation.</p>" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="introduction.html"/>
+<link rel="prev" href="introduction-to-the-book.html"/>
 <link rel="next" href="epidemiology-methods.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
@@ -154,7 +154,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <li class="divider"></li>
 <li class="chapter" data-level="1" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i><b>1</b> About this book</a></li>
-<li class="chapter" data-level="2" data-path="introduction.html"><a href="introduction.html"><i class="fa fa-check"></i><b>2</b> Introduction</a></li>
+<li class="chapter" data-level="2" data-path="introduction-to-the-book.html"><a href="introduction-to-the-book.html"><i class="fa fa-check"></i><b>2</b> Introduction to the book</a></li>
 <li class="chapter" data-level="3" data-path="survey-methods.html"><a href="survey-methods.html"><i class="fa fa-check"></i><b>3</b> Survey Methods</a>
 <ul>
 <li class="chapter" data-level="3.1" data-path="survey-methods.html"><a href="survey-methods.html#demographic-health-surveys-dhs"><i class="fa fa-check"></i><b>3.1</b> Demographic Health Surveys (DHS)</a>
@@ -166,12 +166,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <ul>
 <li class="chapter" data-level="4.1" data-path="epidemiology-methods.html"><a href="epidemiology-methods.html#dataset-exploration"><i class="fa fa-check"></i><b>4.1</b> Dataset exploration</a></li>
 </ul></li>
-<li class="chapter" data-level="5" data-path="health-services.html"><a href="health-services.html"><i class="fa fa-check"></i><b>5</b> Health Services</a></li>
-<li class="chapter" data-level="6" data-path="interrupted-time-series-analysis.html"><a href="interrupted-time-series-analysis.html"><i class="fa fa-check"></i><b>6</b> Interrupted Time series analysis</a></li>
-<li class="chapter" data-level="7" data-path="nhanes.html"><a href="nhanes.html"><i class="fa fa-check"></i><b>7</b> NHANES</a></li>
-<li class="chapter" data-level="8" data-path="demographic-health-survey-dhs.html"><a href="demographic-health-survey-dhs.html"><i class="fa fa-check"></i><b>8</b> Demographic Health Survey (DHS)</a></li>
-<li class="chapter" data-level="9" data-path="missing-data.html"><a href="missing-data.html"><i class="fa fa-check"></i><b>9</b> Missing Data</a></li>
-<li class="chapter" data-level="10" data-path="appendix.html"><a href="appendix.html"><i class="fa fa-check"></i><b>10</b> Appendix</a></li>
+<li class="chapter" data-level="5" data-path="health-services-and-policy-applications.html"><a href="health-services-and-policy-applications.html"><i class="fa fa-check"></i><b>5</b> Health Services and Policy Applications</a></li>
+<li class="chapter" data-level="6" data-path="interrupted-time-series-analysis.html"><a href="interrupted-time-series-analysis.html"><i class="fa fa-check"></i><b>6</b> Interrupted Time Series Analysis</a></li>
+<li class="chapter" data-level="7" data-path="survival-analysis-with-nhanes.html"><a href="survival-analysis-with-nhanes.html"><i class="fa fa-check"></i><b>7</b> Survival Analysis with NHANES</a></li>
+<li class="chapter" data-level="8" data-path="child-stunting-analysis-using-dhs.html"><a href="child-stunting-analysis-using-dhs.html"><i class="fa fa-check"></i><b>8</b> Child Stunting Analysis using DHS</a></li>
+<li class="chapter" data-level="9" data-path="handling-missing-data.html"><a href="handling-missing-data.html"><i class="fa fa-check"></i><b>9</b> Handling Missing Data</a></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html"><i class="fa fa-check"></i>Appendix</a></li>
 </ul>
 
       </nav>
@@ -212,7 +212,10 @@ data files. The next process of using data required statistical skills that will
 <p>The analysis utilizes data from five waves of the Rwanda Demographic and Health Surveys (DHS) spanning two decades (2000–2020). I imported the official SAS-formatted raw data files (.SAS7BDAT) for each cycle year into R using the haven package, verifying the file dimensions upon import for consistency.</p>
 <p>The first step is to explore the file. The command was used to list the files that are contained within the specified directory path.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="survey-methods.html#cb1-1" tabindex="-1"></a><span class="fu">list.files</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/1992/RWBR21SD&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;RWBR21FL.frq&quot;      &quot;RWBR21FL.frw&quot;      &quot;RWBR21FL.MAP&quot;      &quot;RWBR21FL.SAS&quot;     
+<pre><code>## [1] &quot;RWBR21FL.frq&quot;     
+## [2] &quot;RWBR21FL.frw&quot;     
+## [3] &quot;RWBR21FL.MAP&quot;     
+## [4] &quot;RWBR21FL.SAS&quot;     
 ## [5] &quot;RWBR21FL.SAS7BDAT&quot;</code></pre>
 <p>The library(haven) loads the haven package into the current R session.The haven package is essential because it provides functions (like read_sas) necessary to import data files saved in formats used by other statistical software, such as SAS (Statistical Analysis System), SPSS, and Stata.</p>
 <p>The following lines read and load five different SAS data files (indicated by the .SAS7BDAT file extension) into the R environment, creating five separate data frames:</p>
@@ -246,7 +249,7 @@ data files. The next process of using data required statistical skills that will
           </div>
         </div>
       </div>
-<a href="introduction.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="introduction-to-the-book.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
 <a href="epidemiology-methods.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
