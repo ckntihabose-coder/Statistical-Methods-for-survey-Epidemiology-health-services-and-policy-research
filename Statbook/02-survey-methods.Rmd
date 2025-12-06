@@ -1,34 +1,59 @@
-# Cross-references {#cross}
+# Survey Methods 
 
-Cross-references make it easier for your readers to find and link to elements in your book.
+In this Chapter, we use two cases of survey methods: (1) National Health and Nutrition Examination Surveys (NHANES) and Demographic Health Surveys (DHS).
 
-## Chapters and sub-chapters
+## National Health and Nutrition Examination Surveys (NHANES)
 
-There are two steps to cross-reference any heading:
 
-1. Label the heading: `# Hello world {#nice-label}`. 
-    - Leave the label off if you like the automated heading generated based on your heading title: for example, `# Hello world` = `# Hello world {#hello-world}`.
-    - To label an un-numbered heading, use: `# Hello world {-#nice-label}` or `{# Hello world .unnumbered}`.
 
-1. Next, reference the labeled heading anywhere in the text using `\@ref(nice-label)`; for example, please see Chapter \@ref(cross). 
-    - If you prefer text as the link instead of a numbered reference use: [any text you want can go here](#cross).
+## Demographic Health Surveys (DHS)
 
-## Captioned figures and tables
+Demographic Health Surveys (DHS) is a survey that is implemented in many developping countries. DHS uses a cluster sampling methodology to obtain nationally representative data on population, health, and nutrition. Once completed, results are published and can be accessible by researchers. When access is given, a researcher can download and save 
+data files. The next process of using data required statistical skills that will be described here.
 
-Figures and tables *with captions* can also be cross-referenced from elsewhere in your book using `\@ref(fig:chunk-label)` and `\@ref(tab:chunk-label)`, respectively.
 
-See Figure \@ref(fig:nice-fig).
+### Data importing
 
-```{r nice-fig, fig.cap='Here is a nice figure!', out.width='80%', fig.asp=.75, fig.align='center', fig.alt='Plot with connected points showing that vapor pressure of mercury increases exponentially as temperature increases.'}
-par(mar = c(4, 4, .1, .1))
-plot(pressure, type = 'b', pch = 19)
+The analysis utilizes data from five waves of the Rwanda Demographic and Health Surveys (DHS) spanning two decades (2000–2020). I imported the official SAS-formatted raw data files (.SAS7BDAT) for each cycle year into R using the haven package, verifying the file dimensions upon import for consistency.
+
+The first step is to explore the file. The command was used to list the files that are contained within the specified directory path.
+
+```{r}
+list.files("/Users/corneille/Desktop/Mike lab/DHS/1992/RWBR21SD")
 ```
 
-Don't miss Table \@ref(tab:nice-tab).
 
-```{r nice-tab, tidy=FALSE}
-knitr::kable(
-  head(pressure, 10), caption = 'Here is a nice table!',
-  booktabs = TRUE
-)
+The library(haven) loads the haven package into the current R session.The haven package is essential because it provides functions (like read_sas) necessary to import data files saved in formats used by other statistical software, such as SAS (Statistical Analysis System), SPSS, and Stata.
+
+The following lines read and load five different SAS data files (indicated by the .SAS7BDAT file extension) into the R environment, creating five separate data frames:
+
+```{r}
+
+library(haven)
+data2000 <- read_sas("/Users/corneille/Desktop/Mike lab/DHS/2000/RWBR41SD/RWBR41FL.SAS7BDAT")
+
+data2005 <- read_sas("/Users/corneille/Desktop/Mike lab/DHS/2005/RWBR53SD/RWBR53FL.SAS7BDAT")
+
+data2010 <- read_sas("/Users/corneille/Desktop/Mike lab/DHS/2010/RWBR61SD/RWBR61FL.SAS7BDAT")
+
+data2015 <- read_sas("/Users/corneille/Desktop/Mike lab/DHS/2015/RWBR70SD/RWBR70FL.SAS7BDAT")
+
+data2020 <- read_sas("/Users/corneille/Desktop/Mike lab/DHS/2020/RWBR81SD/RWBR81FL.SAS7BDAT")
+
 ```
+
+
+
+Finally, The five commands were executed to inspect the dimensions (number of rows and columns) of each of the newly loaded data frames. This is a crucial initial step to verify that the data was imported correctly and to understand the size of each dataset (rows = number of observations/survey participants; columns = number of variables/questions).
+```{r}
+dim(data2000)
+dim(data2005)
+dim(data2010)
+dim(data2015)
+dim(data2020)
+
+```
+
+
+
+
