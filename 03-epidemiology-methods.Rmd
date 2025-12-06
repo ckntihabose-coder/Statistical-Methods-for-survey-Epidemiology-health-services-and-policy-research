@@ -1,12 +1,37 @@
-# Parts
+# Epidemiology Methods
 
-You can add parts to organize one or more book chapters together. Parts can be inserted at the top of an .Rmd file, before the first-level chapter heading in that same file. 
+## Dataset exploration
 
-Add a numbered part: `# (PART) Act one {-}` (followed by `# A chapter`)
+We will use the data from NHANES for demonstration, specifically demographic data. The first step, is to pull data from CDC website using nhanesA package. I will save the data into demo
 
-Add an unnumbered part: `# (PART\*) Act one {-}` (followed by `# A chapter`)
+```{r}
+library(nhanesA)
+demo <- nhanes("DEMO", translated = TRUE)
+```
 
-Add an appendix as a special kind of un-numbered part: `# (APPENDIX) Other stuff {-}` (followed by `# A chapter`). Chapters in an appendix are prepended with letters instead of numbers.
+
+It is possible to explore the data pulled. There are various ways such as exploring dimensions. This will show you how many rows do you have in your dataset, and number columns. Specifically, for "demo", we have 9,965 rows and 144 columns.
 
 
+```{r}
+library(nhanesA)
+dim(demo)
+```
+
+It is also possible, to look at structure of the dataset, even far, looking the structure of each variable. Here, I mean the type of variable; numerical, factor, integer,.... This way will also show you how if some missing values are present. To look at entire structure, the analysst can use str(demo), however, because here we have 144 columns, we will present only 10 variables.
+
+```{r}
+str(demo[, 1:10])
+```
+
+You can also exploring percentage of missing values for each variable. To visualize this you must use "plot_missing". To perform this, you need library(DataExplorer). For all variables, this operation can be done plot_missing (demo). However, for simplicity, we will present only 15 variables.
+
+
+
+```{r}
+library(DataExplorer)
+
+# Visualization
+plot_missing ( demo[, 1:15])
+```
 

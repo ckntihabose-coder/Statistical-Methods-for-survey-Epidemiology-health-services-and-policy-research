@@ -1,14 +1,23 @@
 # Survey Methods 
 
-In this Chapter, we use two cases of survey methods: (1) National Health and Nutrition Examination Surveys (NHANES) and Demographic Health Surveys (DHS).
 
-## National Health and Nutrition Examination Surveys (NHANES)
+This chapter introduces statistical methods for the analysis of complex survey data. We focus on two widely used data sources in global and population health:
 
+1. National Health and Nutrition Examination Survey (NHANES)
+2. Demographic and Health Surveys (DHS)
+
+We start by briefly describing survey design features—stratification, clustering, and weighting—and why they matter for valid estimation and inference. We then demonstrate:
+
+- How to import and prepare NHANES and DHS data in R
+- How to specify the survey design using the `survey` package
+- How to obtain design-corrected descriptive statistics and regression models
+
+The emphasis is on reproducible workflows that you can adapt to your own survey analyses.
 
 
 ## Demographic Health Surveys (DHS)
 
-Demographic Health Surveys (DHS) is a survey that is implemented in many developping countries. DHS uses a cluster sampling methodology to obtain nationally representative data on population, health, and nutrition. Once completed, results are published and can be accessible by researchers. When access is given, a researcher can download and save 
+Demographic Health Surveys (DHS) is a survey that is implemented in many developing countries. DHS uses a cluster sampling methodology to obtain nationally representative data on population, health, and nutrition. Once completed, results are published and can be accessible by researchers. When access is given, a researcher can download and save 
 data files. The next process of using data required statistical skills that will be described here.
 
 

@@ -1,11 +1,16 @@
-# Hello bookdown 
+# Introduction 
 
-All chapters start with a first-level heading followed by your chapter title, like the line above. There should be only one first-level heading (`#`) per .Rmd file.
+This book presents practical statistical methods for analyzing survey data and evaluating health policies, with a focus on applications in epidemiology and health services research. The motivating examples are drawn from three main data sources:
 
-## A section
+- National Health and Nutrition Examination Survey (NHANES)
+- Demographic and Health Surveys (DHS)
+- Routine health information systems and policy evaluations from Rwanda
 
-All chapter sections start with a second-level (`##`) or higher heading followed by your section title, like the sections above and below here. You can have as many as you want within a chapter.
+The goal is to bridge the gap between methods textbooks and real analytic workflows. Throughout the book, we will:
 
-### An unnumbered section {-}
+- Work with complex survey designs (weights, strata, PSUs)
+- Fit regression models commonly used in epidemiology
+- Implement interrupted time series (ITS) and controlled ITS designs
+- Apply methods to real questions in maternal and child health, non-communicable diseases, and health system performance
 
-Chapters and sections are numbered by default. To un-number a heading, add a `{.unnumbered}` or the shorter `{-}` at the end of the heading, like in this section.
+R is used for all demonstrations. Code examples are written to be reproducible and annotated so that readers with limited statistical background can follow the logic step by step.
