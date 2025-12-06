@@ -4,12 +4,12 @@
 
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>References | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research</title>
+  <title>3 Survey Methods | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research</title>
   <meta name="description" content="<p>This is a book on statistical and epidemiological methods applied to
 survey analysis, health services research, and policy evaluation.</p>" />
   <meta name="generator" content="bookdown 0.45 and GitBook 2.6.7" />
 
-  <meta property="og:title" content="References | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research" />
+  <meta property="og:title" content="3 Survey Methods | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research" />
   <meta property="og:type" content="book" />
   
   <meta property="og:description" content="<p>This is a book on statistical and epidemiological methods applied to
@@ -17,7 +17,7 @@ survey analysis, health services research, and policy evaluation.</p>" />
   <meta name="github-repo" content="ckntihabose-coder/Statistical-Methods-for-survey-Epidemiology-health-services-and-policy-research" />
 
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="References | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research" />
+  <meta name="twitter:title" content="3 Survey Methods | Statistical Methods for Survey, Epidemiology, Health Services and Policy Research" />
   
   <meta name="twitter:description" content="<p>This is a book on statistical and epidemiological methods applied to
 survey analysis, health services research, and policy evaluation.</p>" />
@@ -33,8 +33,8 @@ survey analysis, health services research, and policy evaluation.</p>" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   
   
-<link rel="prev" href="references.html"/>
-<link rel="next" href="references-2.html"/>
+<link rel="prev" href="hello-bookdown.html"/>
+<link rel="next" href="parts.html"/>
 <script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -219,17 +219,57 @@ div.csl-indent {
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="references-1" class="section level1 unnumbered hasAnchor">
-<h1>References<a href="references-1.html#references-1" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<div id="survey-methods" class="section level1 hasAnchor" number="3">
+<h1><span class="header-section-number">3</span> Survey Methods<a href="survey-methods.html#survey-methods" class="anchor-section" aria-label="Anchor link to header"></a></h1>
+<p>In this Chapter, we use two cases of survey methods: (1) National Health and Nutrition Examination Surveys (NHANES) and Demographic Health Surveys (DHS).</p>
+<div id="national-health-and-nutrition-examination-surveys-nhanes" class="section level2 hasAnchor" number="3.1">
+<h2><span class="header-section-number">3.1</span> National Health and Nutrition Examination Surveys (NHANES)<a href="survey-methods.html#national-health-and-nutrition-examination-surveys-nhanes" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+</div>
+<div id="demographic-health-surveys-dhs" class="section level2 hasAnchor" number="3.2">
+<h2><span class="header-section-number">3.2</span> Demographic Health Surveys (DHS)<a href="survey-methods.html#demographic-health-surveys-dhs" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Demographic Health Surveys (DHS) is a survey that is implemented in many developping countries. DHS uses a cluster sampling methodology to obtain nationally representative data on population, health, and nutrition. Once completed, results are published and can be accessible by researchers. When access is given, a researcher can download and save
+data files. The next process of using data required statistical skills that will be described here.</p>
+<div id="data-importing" class="section level3 hasAnchor" number="3.2.1">
+<h3><span class="header-section-number">3.2.1</span> Data importing<a href="survey-methods.html#data-importing" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The analysis utilizes data from five waves of the Rwanda Demographic and Health Surveys (DHS) spanning two decades (2000–2020). I imported the official SAS-formatted raw data files (.SAS7BDAT) for each cycle year into R using the haven package, verifying the file dimensions upon import for consistency.</p>
+<p>The first step is to explore the file. The command was used to list the files that are contained within the specified directory path.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="survey-methods.html#cb3-1" tabindex="-1"></a><span class="fu">list.files</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/1992/RWBR21SD&quot;</span>)</span></code></pre></div>
+<pre><code>## [1] &quot;RWBR21FL.frq&quot;      &quot;RWBR21FL.frw&quot;      &quot;RWBR21FL.MAP&quot;     
+## [4] &quot;RWBR21FL.SAS&quot;      &quot;RWBR21FL.SAS7BDAT&quot;</code></pre>
+<p>The library(haven) loads the haven package into the current R session.The haven package is essential because it provides functions (like read_sas) necessary to import data files saved in formats used by other statistical software, such as SAS (Statistical Analysis System), SPSS, and Stata.</p>
+<p>The following lines read and load five different SAS data files (indicated by the .SAS7BDAT file extension) into the R environment, creating five separate data frames:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="survey-methods.html#cb5-1" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
+<span id="cb5-2"><a href="survey-methods.html#cb5-2" tabindex="-1"></a>data2000 <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/2000/RWBR41SD/RWBR41FL.SAS7BDAT&quot;</span>)</span>
+<span id="cb5-3"><a href="survey-methods.html#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="survey-methods.html#cb5-4" tabindex="-1"></a>data2005 <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/2005/RWBR53SD/RWBR53FL.SAS7BDAT&quot;</span>)</span>
+<span id="cb5-5"><a href="survey-methods.html#cb5-5" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="survey-methods.html#cb5-6" tabindex="-1"></a>data2010 <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/2010/RWBR61SD/RWBR61FL.SAS7BDAT&quot;</span>)</span>
+<span id="cb5-7"><a href="survey-methods.html#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="survey-methods.html#cb5-8" tabindex="-1"></a>data2015 <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/2015/RWBR70SD/RWBR70FL.SAS7BDAT&quot;</span>)</span>
+<span id="cb5-9"><a href="survey-methods.html#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="survey-methods.html#cb5-10" tabindex="-1"></a>data2020 <span class="ot">&lt;-</span> <span class="fu">read_sas</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/2020/RWBR81SD/RWBR81FL.SAS7BDAT&quot;</span>)</span></code></pre></div>
+<p>Finally, The five commands were executed to inspect the dimensions (number of rows and columns) of each of the newly loaded data frames. This is a crucial initial step to verify that the data was imported correctly and to understand the size of each dataset (rows = number of observations/survey participants; columns = number of variables/questions).</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="survey-methods.html#cb6-1" tabindex="-1"></a><span class="fu">dim</span>(data2000)</span></code></pre></div>
+<pre><code>## [1] 27602   934</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="survey-methods.html#cb8-1" tabindex="-1"></a><span class="fu">dim</span>(data2005)</span></code></pre></div>
+<pre><code>## [1] 30072  1077</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="survey-methods.html#cb10-1" tabindex="-1"></a><span class="fu">dim</span>(data2010)</span></code></pre></div>
+<pre><code>## [1] 32639  1021</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="survey-methods.html#cb12-1" tabindex="-1"></a><span class="fu">dim</span>(data2015)</span></code></pre></div>
+<pre><code>## [1] 30058  1078</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="survey-methods.html#cb14-1" tabindex="-1"></a><span class="fu">dim</span>(data2020)</span></code></pre></div>
+<pre><code>## [1] 30820  1216</code></pre>
 
+</div>
+</div>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-<a href="references.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="references-2.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+<a href="hello-bookdown.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="parts.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
     </div>
   </div>
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
@@ -260,7 +300,7 @@ gitbook.start({
     "size": 2
   },
   "edit": {
-    "link": "https://github.com/ckntihabose-coder/Statistical-Methods-for-survey-Epidemiology-health-services-and-policy-research/edit/main/08-missing-data.Rmd",
+    "link": "https://github.com/ckntihabose-coder/Statistical-Methods-for-survey-Epidemiology-health-services-and-policy-research/edit/main/02-survey-methods.Rmd",
     "text": "Edit"
   },
   "history": {

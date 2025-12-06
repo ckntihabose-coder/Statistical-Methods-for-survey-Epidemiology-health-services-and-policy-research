@@ -173,10 +173,13 @@ div.csl-indent {
 <li class="chapter" data-level="" data-path="hello-bookdown.html"><a href="hello-bookdown.html#an-unnumbered-section"><i class="fa fa-check"></i>An unnumbered section</a></li>
 </ul></li>
 </ul></li>
-<li class="chapter" data-level="3" data-path="cross.html"><a href="cross.html"><i class="fa fa-check"></i><b>3</b> Cross-references</a>
+<li class="chapter" data-level="3" data-path="survey-methods.html"><a href="survey-methods.html"><i class="fa fa-check"></i><b>3</b> Survey Methods</a>
 <ul>
-<li class="chapter" data-level="3.1" data-path="cross.html"><a href="cross.html#chapters-and-sub-chapters"><i class="fa fa-check"></i><b>3.1</b> Chapters and sub-chapters</a></li>
-<li class="chapter" data-level="3.2" data-path="cross.html"><a href="cross.html#captioned-figures-and-tables"><i class="fa fa-check"></i><b>3.2</b> Captioned figures and tables</a></li>
+<li class="chapter" data-level="3.1" data-path="survey-methods.html"><a href="survey-methods.html#national-health-and-nutrition-examination-surveys-nhanes"><i class="fa fa-check"></i><b>3.1</b> National Health and Nutrition Examination Surveys (NHANES)</a></li>
+<li class="chapter" data-level="3.2" data-path="survey-methods.html"><a href="survey-methods.html#demographic-health-surveys-dhs"><i class="fa fa-check"></i><b>3.2</b> Demographic Health Surveys (DHS)</a>
+<ul>
+<li class="chapter" data-level="3.2.1" data-path="survey-methods.html"><a href="survey-methods.html#data-importing"><i class="fa fa-check"></i><b>3.2.1</b> Data importing</a></li>
+</ul></li>
 </ul></li>
 <li class="chapter" data-level="4" data-path="parts.html"><a href="parts.html"><i class="fa fa-check"></i><b>4</b> Parts</a></li>
 <li class="chapter" data-level="5" data-path="footnotes-and-citations.html"><a href="footnotes-and-citations.html"><i class="fa fa-check"></i><b>5</b> Footnotes and citations</a>
@@ -299,6 +302,20 @@ gitbook.start({
 });
 </script>
 
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
 </body>
 
 </html>
