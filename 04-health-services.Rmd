@@ -4,8 +4,7 @@
 
 In this chapiter, we will reproduce the analysis used in the manuscript accessible at https://doi.org/10.1186/s12913-025-12596-x.
 
-The fist step during analysis for a researcher is to pull in R markdown the dataset. This dataset was saved in desktop within the file I named "Datasets".
-As the dataset is in excel ".xlsx", I used library(readxl). I also checked the dimensions of the dataset: it has 1,260 rows and 21 columns or variables.
+The fist step during analysis for a researcher is to pull data. Here, I pulled dataset in R markdown. This dataset names "DatasetNew" was saved in desktop within the file "Datasets". As the dataset is in excel ".xlsx", I used library(readxl). I also checked the dimensions of the dataset: it has 1,260 rows and 23 columns or variables.
 
 Pull data
 
@@ -34,67 +33,7 @@ library(DataExplorer)
 plot_missing (DatasetNew)
 ```
 
-In statistics, it is recommended to conduct bivariate analysis. The following codes/processes give the details of
-bivariate analyses. The outcome variable is "waiting" , while exposures are remaining variables.
 
-
-```{r}
-
-table(DatasetNew$AgeCategory, DatasetNew$waiting)
-TableAgeCat <- table(DatasetNew$AgeCategory, DatasetNew$waiting)
-TableAgeCat <- TableAgeCat[, c(2,1)]
-TableAgeCat
-TotalN <- sum(TableAgeCat)
-TotalPropTableAgeCat <- (TableAgeCat / TotalN) * 100
-TotalPropTableAgeCat
-chisq.test(TableAgeCat)
-
-table(DatasetNew$visits, DatasetNew$waiting)
-TableVisit <-table(DatasetNew$visits,DatasetNew$ waiting)
-TableVisit <-TableVisit[, c(2,1)]
-TableVisit
-TotalN <- sum(TableVisit)
-TotalPropTableVisit <- (TableVisit / TotalN) * 100
-TotalPropTableVisit
-chisq.test(TableVisit)
-
-table(DatasetNew$location, DatasetNew$waiting)
-TableLocation<-table(DatasetNew$location, DatasetNew$waiting)
-TableLocation
-TableLocation <-TableLocation[, c(2,1)]
-TableLocation
-TotalN <- sum(TableLocation)
-TotalPropTableLocation <- (TableLocation / TotalN) * 100
-TotalPropTableLocation
-chisq.test(TableLocation)
-
-
-table(DatasetNew$Gender,DatasetNew$waiting)
-TableGender<-table(DatasetNew$Gender, DatasetNew$waiting)
-TableGender
-TableGender <-TableGender[, c(2,1)]
-TableGender
-chisq.test(TableGender)
-
-
-table(DatasetNew$Hospitalgrp, DatasetNew$waiting)
-TableHosp<-table(DatasetNew$Hospitalgrp, DatasetNew$waiting)
-TableHosp
-TableHosp <-TableHosp[, c(2,1)]
-TableHosp
-TotalN <- sum(TableHosp)
-TotalPropTableHosp <- (TableHosp / TotalN) * 100
-TotalPropTableHosp
-chisq.test(TableHosp)
-
-
-table(DatasetNew$Province, DatasetNew$waiting)
-TableProv <-table(DatasetNew$Province, DatasetNew$waiting)
-TableProv
-TableProv <-TableProv[, c(2,1)]
-TableProv
-chisq.test(TableProv)
-```
 
  
  Create a new data frame containing no missing values for specified variables.
@@ -201,7 +140,9 @@ analytic.data <- analytic.data %>%
  
  
  
- Regression
+ Regression analysis 
+ 
+ 1. Variable 1: location
 
 ```{r}
 
