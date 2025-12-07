@@ -1,4 +1,225 @@
 # Health Services and Policy Applications
 
+## Patient Satisfaction survey
+
+In this chapiter, we will reproduce the analysis used in the manuscript accessible at https://doi.org/10.1186/s12913-025-12596-x.
+
+The fist step during analysis for a researcher is to pull in R markdown the dataset. This dataset was saved in desktop within the file I named "Datasets".
+As the dataset is in excel ".xlsx", I used library(readxl). I also checked the dimensions of the dataset: it has 1,260 rows and 21 columns or variables.
+
+Pull data
 
 
+```{r}
+library(readxl)
+library(dplyr) # Must load dplyr to use select()
+
+DatasetNew <- read_excel("/Users/corneille/Desktop/Datasets/DatasetNew.xlsx")
+# Exclude the unwanted column named '...4'
+DatasetNew <- DatasetNew %>%
+  select(-`...3`)
+
+#Explore number of rows and # columns
+dim(DatasetNew)
+#look at structure
+str(DatasetNew)
+```
+
+The second step is to check data quality. Here, I evaluated the percent of missingness for each variable.
+
+```{r}
+library(DataExplorer)
+
+# Visualization
+plot_missing (DatasetNew)
+```
+
+In statistics, it is recommended to conduct bivariate analysis. The following codes/processes give the details of
+bivariate analyses. The outcome variable is "waiting" , while exposures are remaining variables.
+
+
+```{r}
+
+table(DatasetNew$AgeCategory, DatasetNew$waiting)
+TableAgeCat <- table(DatasetNew$AgeCategory, DatasetNew$waiting)
+TableAgeCat <- TableAgeCat[, c(2,1)]
+TableAgeCat
+TotalN <- sum(TableAgeCat)
+TotalPropTableAgeCat <- (TableAgeCat / TotalN) * 100
+TotalPropTableAgeCat
+chisq.test(TableAgeCat)
+
+table(DatasetNew$visits, DatasetNew$waiting)
+TableVisit <-table(DatasetNew$visits,DatasetNew$ waiting)
+TableVisit <-TableVisit[, c(2,1)]
+TableVisit
+TotalN <- sum(TableVisit)
+TotalPropTableVisit <- (TableVisit / TotalN) * 100
+TotalPropTableVisit
+chisq.test(TableVisit)
+
+table(DatasetNew$location, DatasetNew$waiting)
+TableLocation<-table(DatasetNew$location, DatasetNew$waiting)
+TableLocation
+TableLocation <-TableLocation[, c(2,1)]
+TableLocation
+TotalN <- sum(TableLocation)
+TotalPropTableLocation <- (TableLocation / TotalN) * 100
+TotalPropTableLocation
+chisq.test(TableLocation)
+
+
+table(DatasetNew$Gender,DatasetNew$waiting)
+TableGender<-table(DatasetNew$Gender, DatasetNew$waiting)
+TableGender
+TableGender <-TableGender[, c(2,1)]
+TableGender
+chisq.test(TableGender)
+
+
+table(DatasetNew$Hospitalgrp, DatasetNew$waiting)
+TableHosp<-table(DatasetNew$Hospitalgrp, DatasetNew$waiting)
+TableHosp
+TableHosp <-TableHosp[, c(2,1)]
+TableHosp
+TotalN <- sum(TableHosp)
+TotalPropTableHosp <- (TableHosp / TotalN) * 100
+TotalPropTableHosp
+chisq.test(TableHosp)
+
+
+table(DatasetNew$Province, DatasetNew$waiting)
+TableProv <-table(DatasetNew$Province, DatasetNew$waiting)
+TableProv
+TableProv <-TableProv[, c(2,1)]
+TableProv
+chisq.test(TableProv)
+```
+
+ 
+ Create a new data frame containing no missing values for specified variables.
+ 
+  
+```{r}
+# Load necessary packages
+library(dplyr)
+library(tidyr)
+
+# 1. Define the set of variables to keep and check for completeness
+varset <-
+
+ c(
+
+ 'Province', 'visits', 'AgeCategory',
+'Hospitalgrp', 'location', 'Gender', 'entrance', 'triage', 'medical doctor', 'laboratory', 'dispensing pharmacy', 'radiolohgy','rights respected?', 'waiting' , 'cashier'
+
+ ) 
+
+library(dplyr)
+
+analytic.data <- DatasetNew %>%
+  select(all_of(varset)) %>%      # keep only the variables in varset
+  filter(complete.cases(.))       # keep only complete cases
+
+dim(analytic.data)
+```
+ 
+ Data Harmonization before regression
+ 
+```{r}
+
+#Recode Yes/No to 1/0
+
+yes_no_vars <- c(
+  "entrance",
+  "triage",
+  "medical doctor",
+  "laboratory",
+  "dispensing pharmacy",
+  "radiolohgy",
+  "rights respected?",
+  "waiting",
+  "cashier"
+)
+
+analytic.data <- analytic.data %>%
+  mutate(across(all_of(yes_no_vars),
+                ~ case_when(
+                  . == "Yes" ~ 1,
+                  . == "No"  ~ 0,
+                  TRUE       ~ NA_real_
+                )))
+
+analytic.data <- analytic.data %>%
+  mutate(
+    Province = recode(Province,
+                      "Eastern"      = 1,
+                      "Kigali City"  = 2,
+                      "Northern"     = 3,
+                      "Southern"     = 4,
+                      "Western"      = 5) |> as.numeric()
+  )
+
+analytic.data <- analytic.data %>%
+  mutate(
+    visits = recode(visits,
+                    "new"        = 1,
+                    "returning" = 2) |> as.numeric()
+  )
+
+analytic.data <- analytic.data %>%
+  mutate(
+    AgeCategory = recode(AgeCategory,
+                         "young" = 1,
+                         "Adult" = 2) |> as.numeric()
+  )
+
+
+analytic.data <- analytic.data %>%
+  mutate(
+    Hospitalgrp = recode(Hospitalgrp,
+                         "District"     = 1,
+                         "higherRanked" = 2) |> as.numeric()
+  )
+
+analytic.data <- analytic.data %>%
+  mutate(
+    location = recode(location,
+                      "rural" = 1,
+                      "urban" = 2) |> as.numeric()
+  )
+
+analytic.data <- analytic.data %>%
+  mutate(
+    Gender = recode(Gender,
+                    "Male"   = 1,
+                    "Female" = 2) |> as.numeric()
+  )
+
+
+```
+ 
+ 
+ 
+ Regression
+
+```{r}
+
+###location#
+
+#crude analysis
+
+MOD1 <- glm(waiting ~ location, family = "binomial", data = analytic.data)
+summary(MOD1)
+
+# Odds ratios
+exp(coef(MOD1))
+
+exp(confint(MOD1))     
+
+#Adjusted model
+
+
+```
+
+                        
