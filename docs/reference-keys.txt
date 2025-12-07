@@ -6,6 +6,7 @@ data-importing
 epidemiology-methods
 dataset-exploration
 health-services-and-policy-applications
+patient-satisfaction-survey
 interrupted-time-series-analysis
 survival-analysis-with-nhanes
 child-stunting-analysis-using-dhs

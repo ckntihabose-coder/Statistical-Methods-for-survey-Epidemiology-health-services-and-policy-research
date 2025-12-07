@@ -166,7 +166,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <ul>
 <li class="chapter" data-level="4.1" data-path="epidemiology-methods.html"><a href="epidemiology-methods.html#dataset-exploration"><i class="fa fa-check"></i><b>4.1</b> Dataset exploration</a></li>
 </ul></li>
-<li class="chapter" data-level="5" data-path="health-services-and-policy-applications.html"><a href="health-services-and-policy-applications.html"><i class="fa fa-check"></i><b>5</b> Health Services and Policy Applications</a></li>
+<li class="chapter" data-level="5" data-path="health-services-and-policy-applications.html"><a href="health-services-and-policy-applications.html"><i class="fa fa-check"></i><b>5</b> Health Services and Policy Applications</a>
+<ul>
+<li class="chapter" data-level="5.1" data-path="health-services-and-policy-applications.html"><a href="health-services-and-policy-applications.html#patient-satisfaction-survey"><i class="fa fa-check"></i><b>5.1</b> Patient Satisfaction survey</a></li>
+</ul></li>
 <li class="chapter" data-level="6" data-path="interrupted-time-series-analysis.html"><a href="interrupted-time-series-analysis.html"><i class="fa fa-check"></i><b>6</b> Interrupted Time Series Analysis</a></li>
 <li class="chapter" data-level="7" data-path="survival-analysis-with-nhanes.html"><a href="survival-analysis-with-nhanes.html"><i class="fa fa-check"></i><b>7</b> Survival Analysis with NHANES</a></li>
 <li class="chapter" data-level="8" data-path="child-stunting-analysis-using-dhs.html"><a href="child-stunting-analysis-using-dhs.html"><i class="fa fa-check"></i><b>8</b> Child Stunting Analysis using DHS</a></li>
@@ -212,11 +215,7 @@ data files. The next process of using data required statistical skills that will
 <p>The analysis utilizes data from five waves of the Rwanda Demographic and Health Surveys (DHS) spanning two decades (2000–2020). I imported the official SAS-formatted raw data files (.SAS7BDAT) for each cycle year into R using the haven package, verifying the file dimensions upon import for consistency.</p>
 <p>The first step is to explore the file. The command was used to list the files that are contained within the specified directory path.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="survey-methods.html#cb1-1" tabindex="-1"></a><span class="fu">list.files</span>(<span class="st">&quot;/Users/corneille/Desktop/Mike lab/DHS/1992/RWBR21SD&quot;</span>)</span></code></pre></div>
-<pre><code>## [1] &quot;RWBR21FL.frq&quot;     
-## [2] &quot;RWBR21FL.frw&quot;     
-## [3] &quot;RWBR21FL.MAP&quot;     
-## [4] &quot;RWBR21FL.SAS&quot;     
-## [5] &quot;RWBR21FL.SAS7BDAT&quot;</code></pre>
+<pre><code>## [1] &quot;RWBR21FL.frq&quot;      &quot;RWBR21FL.frw&quot;      &quot;RWBR21FL.MAP&quot;      &quot;RWBR21FL.SAS&quot;      &quot;RWBR21FL.SAS7BDAT&quot;</code></pre>
 <p>The library(haven) loads the haven package into the current R session.The haven package is essential because it provides functions (like read_sas) necessary to import data files saved in formats used by other statistical software, such as SAS (Statistical Analysis System), SPSS, and Stata.</p>
 <p>The following lines read and load five different SAS data files (indicated by the .SAS7BDAT file extension) into the R environment, creating five separate data frames:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="survey-methods.html#cb3-1" tabindex="-1"></a><span class="fu">library</span>(haven)</span>

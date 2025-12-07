@@ -22,5 +22,5 @@ This book is under development. It will eventually cover:
 -   Interrupted time series for policy evaluation
 -   Health services and policy applications (drones, oxygen systems, etc.)
 
-I will be using R in all demonstrations. I will trt to make things easier to understand for non-statistical background.
+I will be using R in all demonstrations. I will try to make things easier to understand for non-statistical background.
 
