@@ -2,11 +2,12 @@
 
 ## Patient Satisfaction survey
 
-In this chapiter, we will reproduce the analysis used in the manuscript accessible at https://doi.org/10.1186/s12913-025-12596-x.
+In this chapter, we reproduce the analyses reported in the manuscript available at https://doi.org/10.1186/s12913-025-12596-x
+.
 
-The fist step during analysis for a researcher is to pull data. Here, I pulled dataset in R markdown. This dataset names "DatasetNew" was saved in desktop within the file "Datasets". As the dataset is in excel ".xlsx", I used library(readxl). I also checked the dimensions of the dataset: it has 1,260 rows and 23 columns or variables.
+The first step in any empirical analysis is data acquisition. For this exercise, the dataset was imported into R using an R Markdown workflow. The Excel file (.xlsx), named DatasetNew, was stored on the desktop within a folder labeled Datasets and was read using the readxl package.
 
-Pull data
+After importing the data, its structure was examined. The dataset contains 1,260 observations (rows) and 23 variables (columns).
 
 
 ```{r}
@@ -36,7 +37,7 @@ plot_missing (DatasetNew)
 
 
  
- Create a new data frame containing no missing values for specified variables.
+Next, I created a new data frame restricted to complete cases, retaining only observations with no missing values in the specified variables.
  
   
 ```{r}
@@ -63,7 +64,7 @@ analytic.data <- DatasetNew %>%
 dim(analytic.data)
 ```
  
- Data Harmonization before regression
+Prior to regression modeling, data harmonization was performed to ensure consistency and comparability across variables. This included recoding categorical variables, aligning variable formats, and verifying reference categories, thereby ensuring that all variables were appropriately structured for regression analysis.
  
 ```{r}
 
@@ -140,9 +141,9 @@ analytic.data <- analytic.data %>%
  
  
  
- Regression analysis 
- 
- 1. Variable 1: location
+Regression Analysis
+
+The primary independent variable included in the regression model was location, which was specified according to the predefined categories in the dataset.
 
 ```{r}
 
