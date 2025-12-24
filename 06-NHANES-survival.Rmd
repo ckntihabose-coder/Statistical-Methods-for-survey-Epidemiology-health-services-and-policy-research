@@ -1,3 +1,947 @@
-# Survival Analysis with NHANES
+# Survival Analysis 
+
+In survival analysis, the outcome of interest is the time until a predefined event occurs. Suppose a researcher conducts a retrospective cohort study using data from 2,000 patients diagnosed with hepatitis C virus (HCV) infection. Among these patients, 1,600 received weekly injections of interferon combined with daily oral ribavirin for 24 weeks, while the remaining 400 received ledipasvir/sofosbuvir (Harvoni), administered as one tablet once daily for 12 weeks.
+
+Viral load measurements were obtained weekly for all patients for up to 24 weeks of follow-up. Because Harvoni was newly introduced at the time, patients treated with Harvoni were defined as the exposed group, and those receiving interferon-based therapy were defined as the unexposed group.
+
+The outcome of interest was defined as the time to viral suppression, operationalized as the first occurrence of an undetectable HCV viral load. Patients who did not achieve viral suppression by the end of follow-up or who were lost to follow-up were censored at their last viral load measurement.
+
+Survival analysis methods, such as Kaplan–Meier estimation and Cox proportional hazards regression, can then be used to compare the hazard of achieving viral suppression between the Harvoni and interferon-based treatment groups.
+
+In this chapter, we are going to use to replicate the study entitled : "Examining mortality risk among adults with active asthma stratified by sleep duration: A 14-year analysis of the National Health and Nutrition Examination Survey (NHANES) 2005-2018"
+
+in this chapter, we replicate the study titled “Examining mortality risk among adults with active asthma stratified by sleep duration: A 14-year analysis of the National Health and Nutrition Examination Survey (NHANES) 2005–2018.”
+
+### Data access and data harmonization
+
+Step 1: Data extraction and harmonization
+
+Many researchers use publicly available datasets such as NHANES, the Demographic and Health Surveys (DHS), and the Canadian Community Health Survey (CCHS). Each dataset has its own data access procedures and policies for use. In this section, we demonstrate how we extracted NHANES data from the CDC/NCHS website and harmonized variables across survey cycles for analysis.
+
+The first step is to load the R packages required for data extraction, cleaning, survey-weighted analysis, missing data handling, and survival modelling.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(here)
+
+# Data Import and Cleaning
+library(readr)
+library(dplyr)
+library(purrr)
+library(forcats)
+library(labelled)
+library(tidyr)
+
+# Survey Design and Analysis
+library(survey)
+library(srvyr)
+library(nhanesA)
+
+# Missing Data Handling and Diagnostics
+library(naniar)
+library(mice)
+library(VIM)
+
+# Descriptive and Exploratory Analysis
+library(DataExplorer)
+library(gtsummary)
+
+# Imputation and Modelling
+library(mitools)      # FOR imputationList() and other MI tools
+library(knitr)
+library(kableExtra)
+library(ggpubr)   # for ggarrange
+library(survival)
+library(survminer)
+library(car)
+library(Publish)
+library(MatchIt) # Needed for matching functions later
+
+library(mice)
+library(dplyr)
+library(purrr)
+library(survival) # For nelsonaalen() and survSplit()
+library(survey)   # For svydesign()
+library(mitools)  # For imputationList()
+
+# Visualization and Reporting
+library(ggplot2)
+library(DiagrammeR)
+library(glue)
+```
+
+In this section, NHANES data from seven survey cycles (2005–2006 through 2017–2018) were systematically extracted, harmonized, and merged with linked mortality files to construct a unified analytic dataset. For each cycle, demographic, clinical, behavioral, and lifestyle variables relevant to asthma, sleep duration, and mortality were retrieved using cycle-specific file structures and variable names. Differences in variable availability and coding across cycles (e.g., sleep duration and physical activity measures) were resolved through predefined mappings and coalescing rules to ensure consistency over time. All datasets were merged using the unique participant identifier (SEQN), with safeguards to handle missing files, overlapping variables, and inconsistent naming. Derived variables—including harmonized sleep duration, employment status, and physical activity—were created, and mortality follow-up time was incorporated to support survival analysis. The resulting pooled dataset represents a harmonized, cycle-consistent NHANES cohort suitable for longitudinal mortality analyses.
+
+
+```{r}
+
+# ---- Config: cycles ----
+cycle_years <- c(
+  D = 2005,
+  E = 2007,
+  F = 2009,
+  G = 2011,
+  H = 2013,
+  I = 2015,
+  J = 2017
+)
+
+# ---- Variable map (correct file prefixes) ----
+# Use RAW codes; we’ll read with translated = FALSE and UPPER-case names
+nhanes_var_map <- list(
+  DEMO = list(
+    survey.weight = "WTMEC2YR",
+    psu           = "SDMVPSU",
+    strata        = "SDMVSTRA",
+    sex           = "RIAGENDR",
+    age           = "RIDAGEYR",
+    race          = "RIDRETH1",
+    child_ed      = "DMDEDUC2",
+    adult_ed      = "DMDEDUC3",
+    marital       = "DMDMARTL",
+    PIR           = "INDFMPIR"
+  ),
+
+  # Sleep: 2005–2014 (D–H): SLD010H; 2015–2018 (I–J): SLD012
+  SLQ = list(
+    duration_I_J = "SLD012",
+    duration_D_H = "SLD010H"
+  ),
+
+  BMX = list(
+    BMI = "BMXBMI"
+  ),
+
+  SMQ = list(
+    smokes = "SMQ020"
+  ),
+
+  DBQ = list(
+    diet = "DBQ700"
+  ),
+
+  MCQ = list(
+    ever_asthma      = "MCQ010",
+    active_asthma    = "MCQ035",
+    cancer           = "MCQ220",
+    emergency_asthma = "MCQ050"
+  ),
+
+  # Physical activity: PAQ605 (E–J). For D we’ll use PAD200.
+  PAQ = list(
+    vigorous.work2_E_J = "PAQ605"
+  ),
+
+  PAD = list(
+    vigorous.work1_D = "PAD200"
+  ),
+
+  # Household smoking: SMQFAM file (not “SMD” as a file prefix)
+  SMQFAM = list(
+    tobacco_1 = "SMD410",
+    tobacco_2 = "SMD460"
+  ),
+
+  # Employment: OCQ file. Use OCD150 (“Type of work last week”) to derive employed.
+  OCQ = list(
+    ocd150 = "OCD150"
+  )
+)
+
+# Columns we want to guarantee exist in the combined set
+guaranteed_optional_cols <- c("employed", "tobacco_1", "tobacco_2")
+
+# ---- Helper: fetch one NHANES file safely and select mapped vars ----
+get_nhanes_data <- function(file_prefix, suffix, var_map) {
+  file_name <- paste0(file_prefix, "_", suffix)
+
+  dat <- tryCatch(
+    nhanes(file_name, translated = FALSE),
+    error = function(e) NULL
+  )
+  if (is.null(dat)) return(NULL)
+
+  # Make all column names upper-case
+  dat <- dat |> dplyr::rename_with(toupper)
+
+  # Build "friendly name = raw code" mapping
+  # e.g. survey.weight = "WTINT2YR"
+  select_list <- setNames(
+    c("SEQN", unlist(var_map)),
+    c("SEQN", names(var_map))
+  )
+
+  # Keep only the mappings whose RAW codes actually exist in this file
+  select_list_filtered <- select_list[select_list %in% names(dat)]
+
+  # If nothing matches, just return NULL
+  if (length(select_list_filtered) == 0L) return(NULL)
+
+  # Use dplyr::select() with tidy eval:
+  # names(select_list_filtered) = new (friendly) names
+  # values(select_list_filtered) = existing (raw) names
+  dat |>
+    dplyr::select(!!!select_list_filtered)
+}
+
+# ---- Core per-cycle builder ----
+get_cycle <- function(suffix) {
+  year <- cycle_years[[suffix]]
+  message(sprintf("\n--- Processing cycle %s (%d-%d) ---", suffix, year, year + 1))
+
+  # ----- Mortality file for this cycle -----
+  mort_file <- paste0(
+    "https://ftp.cdc.gov/pub/Health_Statistics/NCHS/datalinkage/linked_mortality/",
+    "NHANES_", year, "_", year + 1, "_MORT_2019_PUBLIC.dat"
+  )
+
+  mortality <- tryCatch(
+    readr::read_fwf(
+      file = mort_file,
+      col_types = "iiiiiiii",
+      fwf_cols(
+        SEQN     = c(1, 6),
+        death    = c(16, 16),
+        followup = c(43, 45)
+      ),
+      na = c("", ".")
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(mortality)) return(NULL)
+
+  # ----- Pull files for this cycle -----
+  demo   <- get_nhanes_data("DEMO",   suffix, nhanes_var_map$DEMO)
+  if (is.null(demo)) return(NULL)
+
+  slq    <- get_nhanes_data("SLQ",    suffix, nhanes_var_map$SLQ)
+  bmx    <- get_nhanes_data("BMX",    suffix, nhanes_var_map$BMX)
+  smq    <- get_nhanes_data("SMQ",    suffix, nhanes_var_map$SMQ)
+  dbq    <- get_nhanes_data("DBQ",    suffix, nhanes_var_map$DBQ)
+  mcq    <- get_nhanes_data("MCQ",    suffix, nhanes_var_map$MCQ)
+
+  pad    <- if (suffix == "D") {
+    get_nhanes_data("PAD", suffix, nhanes_var_map$PAD)
+  } else {
+    NULL
+  }
+
+  paq    <- if (suffix != "D") {
+    get_nhanes_data("PAQ", suffix, nhanes_var_map$PAQ)
+  } else {
+    NULL
+  }
+
+  smqfam <- get_nhanes_data("SMQFAM", suffix, nhanes_var_map$SMQFAM)
+  ocq    <- get_nhanes_data("OCQ",    suffix, nhanes_var_map$OCQ)
+
+  # Start with mortality + demo
+  result <- mortality |>
+    dplyr::left_join(demo, by = "SEQN")
+
+  # Columns that may collide that we want to coalesce from the new join
+  cols_to_pref_new <- c(
+    "duration_I_J",
+    "duration_D_H",
+    "vigorous.work1_D",
+    "vigorous.work2_E_J",
+    "tobacco_1",
+    "tobacco_2",
+    "ocd150"
+  )
+
+  safe_join <- function(base, add) {
+    if (is.null(add)) return(base)
+
+    tmp <- base |>
+      dplyr::left_join(add, by = "SEQN", suffix = c("", "_NEW"))
+
+    # Prefer values from *_NEW when both exist
+    for (col in cols_to_pref_new) {
+      col_new <- paste0(col, "_NEW")
+      if (col %in% names(tmp) && col_new %in% names(tmp)) {
+        tmp <- tmp |>
+          dplyr::mutate(
+            !!col := dplyr::coalesce(.data[[col_new]], .data[[col]])
+          ) |>
+          dplyr::select(-dplyr::all_of(col_new))
+      }
+    }
+
+    # Drop any remaining *_NEW columns just in case
+    tmp |>
+      dplyr::select(-dplyr::matches("_NEW$"))
+  }
+
+  # Join all other data frames safely
+  for (df in list(slq, bmx, smq, dbq, mcq, pad, paq, smqfam, ocq)) {
+    result <- safe_join(result, df)
+  }
+
+  # Ensure presence of important columns if they never appeared
+  for (nm in c(
+    "tobacco_1", "tobacco_2",
+    "duration_I_J", "duration_D_H",
+    "vigorous.work1_D", "vigorous.work2_E_J",
+    "ocd150"
+  )) {
+    if (!nm %in% names(result)) result[[nm]] <- NA_real_
+  }
+
+  # Derivations:
+  # - Sleep duration (hours): prefer SLD012 (I–J), fallback SLD010H (D–H)
+  # - Vigorous work: PAQ605 (E–J) or PAD200 (D)
+  # - Employed (binary): 1 if OCQ says “working” (OCD150==1 or ==2 “with a job but not at work”)
+  result <- result |>
+    dplyr::mutate(
+      duration       = dplyr::coalesce(.data$duration_I_J, .data$duration_D_H),
+      vigorous.work  = dplyr::coalesce(.data$vigorous.work1_D, .data$vigorous.work2_E_J),
+      employed       = dplyr::case_when(
+        ocd150 %in% c(1, 2) ~ 1,
+        ocd150 %in% c(3, 4) ~ 0,
+        TRUE                ~ NA_real_
+      ),
+      cycle_year     = year
+    ) |>
+    dplyr::select(
+      -dplyr::any_of(c(
+        "duration_I_J", "duration_D_H",
+        "vigorous.work1_D", "vigorous.work2_E_J",
+        "ocd150"
+      ))
+    ) |>
+    dplyr::distinct()
+
+  return(result)
+}
+
+# ---- Execution: build nhanes.final ----
+cycles <- names(cycle_years)
+
+nhanes_list <- purrr::map(cycles, get_cycle)
+
+nhanes.final <- nhanes_list |>
+  purrr::keep(~ !is.null(.x)) |>
+  dplyr::bind_rows()
+
+# Quick checks
+names(nhanes.final)
+dim(nhanes.final)
+dplyr::glimpse(nhanes.final)
+
+dim(nhanes.final)
+```
+
+This code cleans and harmonizes the pooled NHANES dataset to create analysis-ready variables that are consistent across survey cycles. First, it calculates the number of included cycles and re-scales the NHANES examination weight by dividing WTMEC2YR by the number of cycles to create an appropriate combined-cycle weight. It then recodes key covariates from raw NHANES numeric codes into interpretable categories: race/ethnicity (collapsed into Hispanic, Non-Hispanic White, Non-Hispanic Black, Other), vigorous work activity (Yes/No), education, marital status, poverty-income ratio (PIR) categories, sleep duration (cleaned and categorized as Short/Normal/Long), BMI categories, smoking status, self-rated diet quality, and clinical history variables (cancer, ever asthma, active asthma, emergency asthma). Household tobacco exposure is harmonized across cycles by recoding and coalescing two different questionnaire variables (SMD410 in earlier cycles and SMD460 in later cycles), and additional derived measures are created (any tobacco exposure at home and an estimated number of smokers in the household when available). Finally, the code enforces logical consistency rules (e.g., participants who never had asthma cannot be classified as having active or emergency asthma) and drops intermediate/raw variables used only for recoding, producing nhanes_cleaned as the final cleaned analytic dataset.
+
+```{r}
+library(dplyr)
+library(forcats)
+
+# How many cycles actually made it in
+n_cycles <- nhanes.final$cycle_year |> unique() |> length()
+
+nhanes_cleaned <- nhanes.final |>
+  mutate(
+    # 0) Combine-cycle weight
+    survey.weight = survey.weight / n_cycles,
+
+    # 1) Race/Ethnicity (RIDRETH1 codes)
+    race = dplyr::case_match(
+      as.numeric(race),
+      1 ~ "Mexican American",
+      2 ~ "Other Hispanic",
+      3 ~ "Non-Hispanic White",
+      4 ~ "Non-Hispanic Black",
+      5 ~ "Other Race - Including Multi-Racial",
+      .default = NA_character_
+    ),
+    race = forcats::fct_collapse(
+      factor(race),
+      "Hispanic" = c("Mexican American", "Other Hispanic"),
+      "Other"    = "Other Race - Including Multi-Racial"
+    ),
+    race = factor(
+      race,
+      levels = c("Hispanic","Non-Hispanic White","Non-Hispanic Black","Other")
+    ),
+
+    # 2) Physical Activity at work (PAQ605 or PAD200)
+    vigorous.work = dplyr::case_match(
+      as.numeric(vigorous.work),
+      1 ~ "Yes",
+      2 ~ "No",
+      3 ~ "Unable to do activity",
+      7 ~ NA_character_,
+      9 ~ NA_character_,
+      .default = NA_character_
+    ),
+    vigorous.work = forcats::fct_collapse(
+      factor(vigorous.work),
+      "Yes" = "Yes",
+      "No"  = c("No","Unable to do activity")
+    ),
+    vigorous.work = factor(vigorous.work, levels = c("Yes","No")),
+
+    # 3) Household tobacco exposure — HARMONIZE & COALESCE
+    #    SMD410 (2005–2012): 1 Yes, 2 No, 7/9 NA
+    tobacco_1_rec = dplyr::case_match(
+      as.numeric(tobacco_1),
+      1 ~ "Yes",
+      2 ~ "No",
+      7 ~ NA_character_,
+      9 ~ NA_character_,
+      .default = NA_character_
+    ),
+
+    #    SMD460 (2013–2018): 0 No, 1/2/3 Yes, 777/999 NA
+    tobacco_2_rec = dplyr::case_match(
+      as.numeric(tobacco_2),
+      0   ~ "No",
+      1   ~ "Yes",
+      2   ~ "Yes",
+      3   ~ "Yes",
+      777 ~ NA_character_,
+      999 ~ NA_character_,
+      .default = NA_character_
+    ),
+
+    # Unified Yes/No flag 
+    tobacco_home = dplyr::coalesce(tobacco_1_rec, tobacco_2_rec),
+    tobacco_home = factor(tobacco_home, levels = c("Yes","No")),
+
+    # Count of smokers in household
+    smokers_in_home_460 = dplyr::case_when(
+      as.numeric(tobacco_2) %in% c(0,1,2,3) ~ as.numeric(tobacco_2),
+      as.numeric(tobacco_2) %in% c(777,999) ~ NA_real_,
+      TRUE ~ NA_real_
+    ),
+    smokers_in_home_410 = dplyr::case_when(
+      as.numeric(tobacco_1) == 2 ~ 0,        # "No" => 0 smokers
+      as.numeric(tobacco_1) == 1 ~ NA_real_, # "Yes" but no count available in 2005–2012
+      as.numeric(tobacco_1) %in% c(7,9) ~ NA_real_,
+      TRUE ~ NA_real_
+    ),
+    smokers_in_home = dplyr::coalesce(smokers_in_home_460, smokers_in_home_410),
+
+    # Convenience binary
+    tobacco_home_any = dplyr::case_when(
+      tobacco_home == "Yes" ~ 1L,
+      tobacco_home == "No"  ~ 0L,
+      TRUE ~ NA_integer_
+    ),
+
+    # 4) Education (DMDEDUC2/3)
+    education.raw = dplyr::coalesce(
+      as.numeric(child_ed),
+      as.numeric(adult_ed)
+    ),
+    education = dplyr::case_match(
+      education.raw,
+      1 ~ "Less than 9th grade",
+      2 ~ "9-11th grade",
+      3 ~ "High school graduate/ GED",
+      4 ~ "Some college or AA",
+      5 ~ "College graduate or above",
+      7 ~ NA_character_,
+      9 ~ NA_character_,
+      .default = NA_character_
+    ),
+    education = forcats::fct_collapse(
+      factor(education),
+      "Less than 9th grade"        = "Less than 9th grade",
+      "Some high school"           = "9-11th grade",
+      "High school graduate"       = "High school graduate/ GED",
+      "Some post-secondary"        = "Some college or AA",
+      "College graduate or above"  = "College graduate or above"
+    ),
+    education = factor(
+      education,
+      levels = c(
+        "Less than 9th grade",
+        "Some high school",
+        "High school graduate",
+        "Some post-secondary",
+        "College graduate or above"
+      ),
+      ordered = FALSE
+    ),
+
+    # 5) Marital status (DMDMARTL)
+    marital = dplyr::case_match(
+      as.numeric(marital),
+      1 ~ "Married",
+      2 ~ "Widowed",
+      3 ~ "Divorced",
+      4 ~ "Separated",
+      5 ~ "Never married",
+      6 ~ "Living with partner",
+      77 ~ NA_character_,
+      99 ~ NA_character_,
+      .default = NA_character_
+    ),
+    marital = forcats::fct_collapse(
+      factor(marital),
+      "Married/Living with partner" = c("Married","Living with partner"),
+      "Single" = c("Widowed","Divorced","Separated","Never married")
+    ),
+
+    # 6) PIR categories
+    PIR_cat = cut(
+      as.numeric(PIR),
+      breaks = c(-Inf, 1, 4, Inf),
+      labels = c("Low","Middle","High"),
+      right = FALSE,
+      ordered_result = FALSE
+    ),
+
+    # 7) Sleep duration
+    duration_clean = dplyr::na_if(as.numeric(duration), 77),
+    duration_clean = dplyr::na_if(duration_clean, 99),
+    duration_clean = ifelse(
+      duration_clean < 0 | duration_clean > 24,
+      NA,
+      duration_clean
+    ),
+    duration_cat = cut(
+      duration_clean,
+      breaks = c(-Inf, 7, 9, Inf),
+      labels = c("Short","Normal","Long"),
+      right = FALSE
+    ),
+    duration = factor(
+      duration_cat,
+      levels = c("Short","Normal","Long"),
+      ordered = FALSE
+    ),
+
+    # 8) BMI categories
+    BMI_cat = cut(
+      as.numeric(BMI),
+      breaks = c(-Inf, 25, 30, Inf),
+      labels = c("Underweight & Normal weight","Overweight","Obese"),
+      right = FALSE,
+      ordered_result = FALSE
+    ),
+
+    # 9) Smoking status (SMQ020)
+    smokes = dplyr::case_match(
+      as.numeric(smokes),
+      1 ~ 1,
+      2 ~ 0,
+      7 ~ NA_real_,
+      9 ~ NA_real_,
+      .default = NA_real_
+    ),
+
+    # 10) Diet quality (DBQ700)
+    diet = dplyr::case_match(
+      as.numeric(diet),
+      1 ~ "Poor",
+      2 ~ "Fair",
+      3 ~ "Good",
+      4 ~ "Very good",
+      5 ~ "Excellent",
+      7 ~ NA_character_,
+      9 ~ NA_character_,
+      .default = NA_character_
+    ),
+    diet = factor(
+      diet,
+      levels = c("Poor","Fair","Good","Very good","Excellent"),
+      ordered = FALSE
+    ),
+
+    # 11) Conditions (MCQ010/035/220/050)
+    cancer = dplyr::case_match(
+      as.numeric(cancer),
+      1 ~ 1,
+      2 ~ 0,
+      7 ~ NA_real_,
+      9 ~ NA_real_,
+      .default = NA_real_
+    ),
+    ever_asthma = dplyr::case_match(
+      as.numeric(ever_asthma),
+      1 ~ 1,
+      2 ~ 0,
+      7 ~ NA_real_,
+      9 ~ NA_real_,
+      .default = NA_real_
+    ),
+    active_asthma = dplyr::case_match(
+      as.numeric(active_asthma),
+      1 ~ 1,
+      2 ~ 0,
+      7 ~ NA_real_,
+      9 ~ NA_real_,
+      .default = NA_real_
+    ),
+    emergency_asthma = dplyr::case_match(
+      as.numeric(emergency_asthma),
+      1 ~ 1,
+      2 ~ 0,
+      7 ~ NA_real_,
+      9 ~ NA_real_,
+      .default = NA_real_
+    ),
+
+    # 12) Logical consistency
+    active_asthma = dplyr::if_else(
+      ever_asthma == 0,
+      0L,
+      as.integer(active_asthma),
+      missing = as.integer(active_asthma)
+    ),
+    emergency_asthma = dplyr::if_else(
+      ever_asthma == 0,
+      0L,
+      as.integer(emergency_asthma),
+      missing = as.integer(emergency_asthma)
+    )
+  ) |>
+  dplyr::select(
+    -c(
+      child_ed,
+      adult_ed,
+      education.raw,
+      PIR,
+      BMI,
+      duration_clean,
+      smokers_in_home_460,
+      smokers_in_home_410,
+      tobacco_1_rec,
+      tobacco_2_rec
+    )
+  )
+
+
+
+```
+
+Then, we restricted the dataset to variables required for survey-weighted survival analysis, including mortality status and follow-up time, sampling weights and design variables, and key demographic, socioeconomic, behavioral, and clinical covariates, yielding a fully harmonized analytic NHANES cohort.
+```{r}
+
+nhanes_cleaned <- nhanes_cleaned |>
+  dplyr::select(
+    SEQN,
+    death,
+    followup,
+    survey.weight,
+    psu,
+    strata,
+    sex,
+    age,
+    race,
+    marital,
+    smokes,
+    diet,
+    ever_asthma,
+    active_asthma,
+    emergency_asthma,
+    cancer,
+    vigorous.work,
+    employed,
+    cycle_year,
+    education,
+    PIR_cat,
+    duration,
+    BMI_cat
+  )
+
+
+```
+
+The following step defines the eligible analytic sample by restricting the cleaned NHANES dataset to adults aged 18–79 years with non-missing mortality follow-up time, resulting in the final dataset (d.analytic) used for analysis.
+
+```{r}
+# Eligible dataset
+d.analytic <- nhanes_cleaned |>
+  filter(age >= 18 & age <= 79, !is.na(followup))
+
+dim(d.analytic )
+```
+
+
+We also define the maximum set of candidate predictors to be considered in multivariable models, including the primary exposure (asthma status), the effect modifier (sleep duration), and a priori–selected demographic, socioeconomic, behavioral, and clinical covariates. It then records the total number of observations in the eligible analytic dataset prior to addressing missing data.
+
+```{r}
+# This is the maximum set of predictors considered for multivariable analysis
+ varset <-
+ c(
+
+ ## Exposure and modifier variables
+ 'active_asthma', 'ever_asthma', 'duration',
+
+ ## Adjustment variables
+'sex', 'age', 'marital', 'smokes', 'diet', 'cancer', 'employed', 'race', 'vigorous.work',
+ 'cycle_year', 'education', 'PIR_cat', 'BMI_cat'
+ )
+
+ # This is the the number of rows from the eligible data set
+ nrow.d.withmiss <- d.analytic |> nrow()
+ nrow.d.withmiss
+
+```
+
+This step calculates the number of complete-case observations remaining after listwise deletion of records with missing values in any of the candidate predictor variables, providing the complete-case sample size used for analyses that do not involve imputation.
+
+```{r}
+# This is the number of rows from the analytic data set after listwise deletion
+ nrow.d.nomiss <- d.analytic [, varset] |> na.omit() |> nrow()
+ nrow.d.nomiss
+```
+
+Proportion of observations excluded from the analytic NHANES cohort due to listwise deletion across all candidate predictor variables.
+
+```{r}
+# This is the fraction of listwise deleted records
+ p.missing <- 1 - (nrow.d.nomiss/nrow.d.withmiss)
+ p.missing
+```
+
+
+
+Restriction of the analytic NHANES dataset to participants with non-missing mortality status for survival analysis.
+
+```{r}
+nhanes.death <- d.analytic %>%
+  filter(!is.na(death))
+dim(nhanes.death)
+```
+
+
+
+
+##  Multiple Imputation (MICE)
+
+Multiple Imputation by Chained Equations (MICE) is a statistical approach used to handle missing data by replacing each missing value with a set of plausible values drawn from predictive models based on the observed data. Rather than creating a single completed dataset, MICE generates multiple imputed datasets by iteratively modeling each variable with missing values conditional on other variables in the dataset. Each completed dataset is then analyzed separately, and results are combined using Rubin’s rules to account for uncertainty due to missingness. This approach allows valid statistical inference under the assumption that data are missing at random (MAR) and is widely used in epidemiologic and survey-based research.
+
+To assess the extent and structure of missing data, we first visualized missingness patterns across all variables in the eligible analytic NHANES dataset. This exploratory step helps identify variables with substantial missingness, detect systematic patterns, and inform the choice of an appropriate missing data strategy prior to model fitting.
+
+```{r}
+# Visualization
+plot_missing(d.analytic)
+
+
+```
+
+To evaluate whether missing data were Missing Completely at Random (MCAR), we first applied an MCAR test to the analytic variables. When the MCAR assumption was rejected, we conducted Missing at Random (MAR) diagnostics by fitting, for each variable with missing values, a logistic regression model predicting an indicator of missingness from the remaining covariates. Statistically significant predictors in these models suggest that missingness depends on observed data (i.e., is consistent with MAR), supporting the use of multiple imputation.
+
+```{r}
+
+library(dplyr) # Required for if_else()
+
+test_missingness <- function(d.analytic, vars) {
+  
+  # Create a working copy of the data frame to prevent contamination.
+  working_data <- d.analytic 
+  
+  # --- MCAR Test ---
+  mcar_result <- mcar_test(working_data[vars])
+  print(mcar_result)
+  
+  if (mcar_result$p.value >= 0.05) {
+    message("Data may be MCAR (p >= 0.05). No MAR models run.")
+    
+  } else {
+    message("Warning: Data are NOT MCAR (p < 0.05). 
+            Proceeding with MAR diagnostics.")
+    
+    # --- MAR Diagnostics ---
+    for (v in vars) {
+      
+      # 1. Check if variable has missing data
+      if (all(!is.na(working_data[[v]]))) { 
+        cat("\n--- No missing values in", v, "---\n")
+        next
+      }
+      
+      cat("\n--- Running Missingness Model for", v, " ---\n")
+      
+      # 2. Prepare temporary data and missingness indicator
+      temp_data <- working_data
+      missing_var <- paste0("missing_", v)
+      temp_data[[missing_var]] <- if_else(is.na(temp_data[[v]]), 1, 0)
+      
+      # 3. Define predictors
+      predictors <- setdiff(vars, v) 
+      
+      # 4. Fit the model using tryCatch for robust error handling
+      model <- tryCatch(
+        expr = {
+          glm(as.formula(paste(
+            missing_var, "~", paste(predictors, collapse = " + ")
+          )), family = binomial, data = temp_data) 
+        },
+        error = function(e) {
+          cat("!!! ERROR: GLM failed for variable", v, ". Reason:", 
+              e$message, "!!!\n")
+          return(NULL) # Assign NULL to model if an error occurs
+        }
+      )
+      
+      # --- Guard Clause 1: Check if the model failed ---
+      if (is.null(model)) {
+        cat("!!! Skipping analysis and publish for", v, "due to model failure. 
+            !!!\n")
+        next
+      }
+      
+      # 5. Check for significance and Guard Clause 2
+      model_summary <- summary(model)
+      
+      # Check if the coefficients matrix is available and has predictors 
+      ##(> 1 row)
+      if (is.null(model_summary$coefficients) ||
+          nrow(model_summary$coefficients) <= 1) {
+        cat("!!! WARNING: Model for", v, 
+            "produced no meaningful coefficients (e.g., only intercept or 
+            singular matrix). Skipping significance check. !!!\n")
+        
+        # *** NEW: Robust publishing, even for failed models ***
+        tryCatch({
+          print(publish(model))
+        }, error = function(e) {
+          cat(paste0("!!! ERROR publishing model for ", v, ". Reason: ", 
+                     e$message, " !!!\n"))
+        })
+        next
+      }
+      
+      # Extract p-values (excluding the intercept, which is the first row)
+      pvals <- model_summary$coefficients[, "Pr(>|z|)"]
+      
+      if (any(pvals[-1] < 0.05, na.rm = TRUE)) {
+        cat("*** Note: Some predictors are SIGNIFICANT (p < 0.05).
+            Missingness is likely MAR. ***\n")
+      } else {
+        cat("Note: No predictors are significant (p >= 0.05). 
+            Missingness may still be MCAR within this model space.\n")
+      }
+      
+      # 6. Publish/Print the result (print() ensures output is displayed)
+      # *** NEW: Robust publishing for successful models ***
+      tryCatch({
+        print(publish(model))
+      }, error = function(e) {
+        cat(paste0("!!! ERROR publishing model for ", v, ". Reason: ", 
+                   e$message, " !!!\n"))
+      })
+    }
+  }
+}
+
+
+vars <- c(
+  "death","followup","survey.weight","psu","strata",
+  "active_asthma","sex","age","race","marital","smokes","diet",
+  "ever_asthma","cancer","vigorous.work","employed","cycle_year",
+  "education","PIR_cat","duration","BMI_cat", "emergency_asthma"
+)
+
+test_missingness(d.analytic, vars)
+```
+
+To determine the minimum recommended number of imputed datasets, we applied a commonly used rule of thumb that sets the number of imputations proportional to the fraction of missing information. Specifically, we multiplied the proportion of incomplete observations by 100 and rounded up to the nearest integer to ensure adequate representation of imputation uncertainty in subsequent analyses.
+```{r}
+# This is the recommended number of imputed data sets (at minimum)
+ n.imputed.data <- ceiling(100 * p.missing)
+ n.imputed.data
+```
+
+
+
+This step identifies the variables with missing values to be included in the multiple imputation process and verifies a key logical consistency rule in the data—namely, that participants who never reported having asthma (ever_asthma = 0) cannot be classified as having active asthma (active_asthma = 1). The cross-tabulation confirms whether this constraint is respected prior to imputation. The same was applied for emergency asthma
+```{r}
+# The following variables contain missing values, ordered alphabetically
+ vars.with.missing <-
+ c('active_asthma', 'BMI_cat', 'cancer', 'diet', 'duration', 'education',
+ 'emergency_asthma', 'employed', 'ever_asthma', 'marital', 'PIR_cat',
+ 'smokes', 'vigorous.work')
+
+# If ever_asthma == 0 THEN active_asthma == 0
+ d.analytic |> with(table(ever_asthma, active_asthma))
+ # If ever_asthma == 0 THEN emergency_asthma == 0
+d.analytic |> with(table(ever_asthma, emergency_asthma))
+```
+
+
+
+To support valid multiple imputation in the presence of a survival outcome, we first computed the Nelson–Aalen cumulative hazard estimator using follow-up time and mortality status, thereby summarizing time-to-event information in a single auxiliary variable. We then defined the full set of variables to be used as imputation predictors, including all covariates from the multivariable models, outcome-related variables, survey design features, and additional auxiliary variables to improve the plausibility of the Missing at Random (MAR) assumption.
+```{r}
+
+ #First, we generate the nelsonaalen estimator, which synthesizes time-to-event 
+# information based on followup time and event status.
+ d.analytic$nelsonaalen <- nelsonaalen(d.analytic, followup, death)
+
+ # Next, select the variables to be used as imputation predictors
+ imp.predictors <-
+ c(varset, # Predictors used in multivariable modeling
+'nelsonaalen', 'death', # Outcome data
+'survey.weight', 'psu', 'strata', # Survey design features (as auxiliaries)
+'race') # Other auxiliary variables
+
+```
+
+
+This step implements Multiple Imputation by Chained Equations (MICE) using predictive mean matching (PMM) to replace missing values while preserving realistic distributions. We first constructed and customized the predictor matrix to (i) specify which variables are imputed and which serve as predictors, (ii) prevent a variable from imputing itself, and (iii) avoid using asthma-related variables to predict one another. We then generated m imputed datasets with a fixed number of iterations and a reproducible seed. Finally, we extracted the completed datasets in long format and flagged all records as eligible for downstream analyses.
+
+```{r}
+# --- 1. Define Imputation Parameters ---
+MAX_ITERATIONS <- 10
+
+
+# First, we specify the imputation matrix
+imp.matrix <- make.predictorMatrix(d.analytic)
+
+## Here we override the default settings (THIS IS THE LOGICAL FLAW FROM CODE 1, but included for similarity)
+imp.matrix[names(d.analytic), ] <- 0
+imp.matrix[, names(d.analytic)] <- 0
+
+## Here we manually specify which variables will undergo imputation and which
+## variables will be used as imputation predictors
+# NOTE: 'vars.with.missing' and 'imp.predictors' must be defined beforehand.
+# Since Code 2 didn't define them, this assumes their existence.
+imp.matrix[vars.with.missing, imp.predictors] <- 1
+
+## Here we ensure that asthma variables aren't used to predict each other
+vars.asthma <- c('ever_asthma', 'active_asthma', 'emergency_asthma')
+imp.matrix['ever_asthma', vars.asthma] <- 0
+imp.matrix['active_asthma', vars.asthma] <- 0
+imp.matrix['emergency_asthma', vars.asthma] <- 0
+
+## Here we ensure that a given variable is not used to impute itself
+diag(imp.matrix) <- 0
+
+# Second, we implement the MICE procedure
+imputed_data<- mice(
+  data = d.analytic,
+  m = n.imputed.data,
+  maxit = MAX_ITERATIONS,
+  method = 'pmm',
+  predictorMatrix = imp.matrix,
+  seed = 123,
+  printFlag = FALSE # Adopted from Code 1 to suppress output
+)
+
+print("--- MICE Imputation Complete ---")
+
+# --- 4. Stack Imputed Eligible Data ---
+impdata_eligible <- mice::complete(imputed_data, "long", include = FALSE)
+impdata_eligible$ineligible <- 0
+
+
+```
+
+
+To assess convergence and stability of the MICE algorithm, we inspected trace plots for the imputed variables across iterations and imputations. These plots help verify that the imputation chains mix well and do not show systematic trends, which would suggest non-convergence or model misspecification.
+
+```{r}
+# Check the trace plots for all imputed variables
+plot(imputed_data)
+
+```
 
 
